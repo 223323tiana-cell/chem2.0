@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Flashcard Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-900 via-slate-900 to-purple-950 text-white min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- Header -->
+    <header class="w-full py-6 px-8 flex flex-col sm:flex-row justify-between items-center border-b border-white/10 backdrop-blur-md bg-white/5">
+        <div class="flex items-center space-x-3 mb-4 sm:mb-0">
+            <span class="text-3xl">🧪</span>
+            <h1 class="text-2xl font-black tracking-wider bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">CHEM-FLASH</h1>
+        </div>
+        <div class="flex items-center space-x-6 text-sm font-medium">
+            <div class="bg-white/10 px-4 py-2 rounded-full border border-white/10 shadow-inner">
+                Card <span id="current-card-num" class="text-cyan-400 font-bold">1</span> of <span id="total-cards" class="text-white">18</span>
+            </div>
+            <div class="bg-emerald-500/20 text-emerald-300 px-4 py-2 rounded-full border border-emerald-500/30">
+                Score: <span id="score" class="font-bold">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content / Flashcard Area -->
+    <main class="flex-grow flex flex-col items-center justify-center p-4 sm:p-8 max-w-3xl mx-auto w-full">
+        
+        <!-- Controls Bar -->
+        <div class="w-full flex justify-between items-center mb-6">
+            <button onclick="shuffleCards()" class="flex items-center space-x-2 text-xs uppercase tracking-wider font-bold bg-white/10 hover:bg-white/20 transition px-4 py-2.5 rounded-xl border border-white/10">
+                <span>🔀</span>
+                <span>Shuffle Cards</span>
+            </button>
+            <button onclick="resetGame()" class="text-xs uppercase tracking-wider font-bold text-slate-400 hover:text-white transition">
+                Reset Progress
+            </button>
+        </div>
+
+        <!-- Flashcard Container -->
+        <div id="flashcard" onclick="flipCard()" class="w-full h-80 sm:h-96 cursor-pointer perspective-1000 group">
+            <div id="card-inner" class="relative w-full h-full duration-500 transform-style-3d shadow-2xl rounded-3xl">
+                
+                <!-- Front Side -->
+                <div class="absolute inset-0 w-full h-full bg-slate-800/90 border border-white/15 rounded-3xl p-8 flex flex-col justify-between backface-hidden backdrop-blur-xl shadow-2xl">
+                    <div class="flex justify-between items-center text-xs uppercase tracking-widest text-cyan-400 font-bold">
+                        <span>Question / Prompt</span>
+                        <span>Click to flip 🔄</span>
+                    </div>
+                    <div class="my-auto text-center">
+                        <p id="card-front-text" class="text-xl sm:text-2xl font-semibold leading-relaxed text-slate-100">Loading...</p>
+                    </div>
+                    <div class="text-center text-xs text-slate-400 font-medium">
+                        Think of the answer before revealing!
+                    </div>
+                </div>
+
+                <!-- Back Side -->
+                <div class="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-900 to-indigo-950 border border-cyan-500/30 rounded-3xl p-8 flex flex-col justify-between backface-hidden rotate-y-180 backdrop-blur-xl shadow-2xl">
+                    <div class="flex justify-between items-center text-xs uppercase tracking-widest text-emerald-400 font-bold">
+                        <span>Answer</span>
+                        <span>Revealed ✨</span>
+                    </div>
+                    <div class="my-auto text-center overflow-y-auto max-h-48 py-2">
+                        <p id="card-back-text" class="text-lg sm:text-xl font-medium leading-relaxed text-slate-200">Loading...</p>
+                    </div>
+                    <div class="text-center text-xs text-indigo-300 font-medium">
+                        Did you get it right? Rate below!
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Self-Evaluation Buttons (Only active when flipped) -->
+        <div id="eval-buttons" class="w-full grid grid-cols-2 gap-4 mt-8 opacity-50 pointer-events-none transition-all duration-300">
+            <button onclick="gradeCard(false)" class="bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 py-3 rounded-2xl font-bold text-sm tracking-wide transition shadow-lg flex items-center justify-center space-x-2">
+                <span>❌</span>
+                <span>Need Practice</span>
+            </button>
+            <button onclick="gradeCard(true)" class="bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 py-3 rounded-2xl font-bold text-sm tracking-wide transition shadow-lg flex items-center justify-center space-x-2">
+                <span>✅</span>
+                <span>Got It Right!</span>
+            </button>
+        </div>
+
+        <!-- Navigation Controls -->
+        <div class="w-full flex justify-between items-center mt-6">
+            <button onclick="prevCard()" class="bg-white/10 hover:bg-white/20 border border-white/10 px-6 py-3 rounded-2xl font-bold text-sm transition flex items-center space-x-2">
+                <span>←</span>
+                <span>Previous</span>
+            </button>
+            <button onclick="nextCard()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-6 py-3 rounded-2xl font-extrabold text-sm transition shadow-lg shadow-cyan-500/20 flex items-center space-x-2">
+                <span>Next</span>
+                <span>→</span>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 text-center text-xs text-slate-500 border-t border-white/5">
+        Chemistry Flashcard Training System • Interactive & Randomized
+    </footer>
+
+    <script>
+        const rawFlashcards = [
+            {
+                front: "state the net charge of each atom.",
+                back: "each atom has zero net charge / electrically neutral"
+            },
+            {
+                front: "what is isotopes?",
+                back: "different atoms of same element having same num. of protons and different num. of neutrons"
+            },
+            {
+                front: "name gp 1",
+                back: "alkali metal"
+            },
+            {
+                front: "name gp 2",
+                back: "alkaline earth metal"
+            },
+            {
+                front: "gp1 react with water to from:",
+                back: "alkalis / alkaline metal hydroxide"
+            },
+            {
+                front: "heat & electrical conductivity of metals",
+                back: "good"
+            },
+            {
+                front: "density of gp1 (high or low?)",
+                back: "low density (K ,Li, Na can float on water 中國人能飛！)"
+            },
+            {
+                front: "how should we store gp1 metals?",
+                back: "they are reactive. so they must be stored in paraffin oil to prevent them from reacting with oxygen and water in the air."
+            },
+            {
+                front: "why isotopes can be separated by using physical method.( e.g. centrifuge 離心機）",
+                back: "isotopes have different physical prop. (have different mass）"
+            },
+            {
+                front: "can isotopes be separated by chemical methods?",
+                back: "no. isotopes have same chemical prop."
+            },
+            {
+                front: "metal in same gp have different or same chemical prop. ?",
+                back: "neither :)  they have similar chem. prop. since they have the same num. of outermost shell electrons.\n simillar but not same: reactivity of gp1 increase down the gp."
+            },
+            {
+                front: "the observable change of gp1 metal when they're under the air",
+                back: "they are very reactive and react with oxygen to become tarnished metal oxide (rapidly)"
+            },
+            {
+                front: "gp1 metal + water  produce:",
+                back: "metal hydroxide (*OH) + hydrogen (H2)"
+            },
+            {
+                front: "colour of universal indicator after adding in the metal hydroxide?",
+                back: "blue/purple . metal hydroxide is alkaline ."
+            },
+            {
+                front: "test of hydrogen:",
+                back: "put a burning splint into the gas sample . if the splint burns with a 'pop' sound , the gas is hydrogen."
+            },
+            {
+                front: "gp1 + chlorine produce:",
+                back: "gp1 chloride"
+            },
+            {
+                front: "observable change of reaction of gp1 & chlorine:",
+                back: "white powder forms."
+            },
+            {
+                front: "explain why reactivity increase down gp1",
+                back: "down the gp1 , the atomic size of alkali metals increase . larger atomic size means longer distance between nucleus and outermost shell electrons. therefore, there is weaker attraction force acting on the outermost shell electrons by nucleus. hence outermost shell electron can be lost more readily."
+            },
+            {
+                front: "safety precaution for handling gp1 metals",
+                back: "use Tongs to hold it."
+            }
+        ];
+
+        let flashcards = [...rawFlashcards];
+        let currentIndex = 0;
+        let isFlipped = false;
+        let score = 0;
+
+        const cardElement = document.getElementById('flashcard');
+        const cardInner = document.getElementById('card-inner');
+        const frontText = document.getElementById('card-front-text');
+        const backText = document.getElementById('card-back-text');
+        const currentNumEl = document.getElementById('current-card-num');
+        const totalCardsEl = document.getElementById('total-cards');
+        const scoreEl = document.getElementById('score');
+        const evalButtons = document.getElementById('eval-buttons');
+
+        function initGame() {
+            shuffleArray(flashcards);
+            totalCardsEl.textContent = flashcards.length;
+            currentIndex = 0;
+            score = 0;
+            scoreEl.textContent = score;
+            displayCard();
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function displayCard() {
+            // Reset flip state smoothly
+            if (isFlipped) {
+                cardInner.classList.remove('rotate-y-180');
+                isFlipped = false;
+                evalButtons.classList.add('opacity-50', 'pointer-events-none');
+            }
+            
+            frontText.textContent = flashcards[currentIndex].front;
+            backText.textContent = flashcards[currentIndex].back;
+            currentNumEl.textContent = currentIndex + 1;
+        }
+
+        function flipCard() {
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                cardInner.classList.add('rotate-y-180');
+                evalButtons.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                cardInner.classList.remove('rotate-y-180');
+                evalButtons.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        function gradeCard(correct) {
+            if (correct) {
+                score += 10;
+                scoreEl.textContent = score;
+            }
+            nextCard();
+        }
+
+        function nextCard() {
+            currentIndex = (currentIndex + 1) % flashcards.length;
+            displayCard();
+        }
+
+        function prevCard() {
+            currentIndex = (currentIndex - 1 + flashcards.length) % flashcards.length;
+            displayCard();
+        }
+
+        function shuffleCards() {
+            shuffleArray(flashcards);
+            currentIndex = 0;
+            displayCard();
+        }
+
+        function resetGame() {
+            initGame();
+        }
+
+        // Initialize on load
+        window.onload = initGame;
+    </script>
+</body>
+</html>
+```eof
+
+```
